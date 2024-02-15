@@ -141,11 +141,11 @@ class Renderer {
 	    return 4 * y * framebuffer.width + 4 * x;
     }
     
-    setFramebufferColor(framebuffer, px, color) {
-	    framebuffer.data[px + 0] = color[0];
-	    framebuffer.data[px + 1] = color[1];
-	    framebuffer.data[px + 2] = color[2];
-	    framebuffer.data[px + 3] = color[3];
+    setFramebufferColor(color, x, y, framebuffer) {
+	    let p_idx = this.pixelIndex(x, y, framebuffer);
+        for (let i = 0; i < 4; i++) {
+            framebuffer.data[p_idx + i] = color[i];
+        }
     }
     
     swapPoints(a, b) {
@@ -165,7 +165,7 @@ class Renderer {
                 this.drawLineLow(p1.x, p1.y, p0.x, p0.y, color, framebuffer);
             }
         }
-        else {                                        // |m| > 1
+        else {                                                // |m| > 1
             if (p0.y < p1.y) {
                 this.drawLineHigh(p0.x, p0.y, p1.x, p1.y, color, framebuffer);
             }
@@ -174,67 +174,62 @@ class Renderer {
             }
         }
     }
-
+    
     drawLineLow(x0, y0, x1, y1, color, framebuffer) {
         let A = y1 - y0;
         let B = x0 - x1;
-        let iy = 1;
+        let iy = 1; // y increment (+1 for positive slope, -1 for negative slop)
         if (A < 0) {
             iy = -1;
             A *= -1;
         }
         let D = 2 * A + B;
-        let x = x0;
+        let D0 = 2 * A;
+        let D1 = 2 * A + 2 * B;
+    
         let y = y0;
-        let px;
-        while (x <= x1)
-        {
-            px = this.pixelIndex(x, y, framebuffer);
-            this.setFramebufferColor(framebuffer, px, color);
-            x += 1;
-            if (D <= 0)
-            {
-                D += 2 * A;
+        for (let x = x0; x <= x1; x++) {
+            this.setFramebufferColor(color, x, y, framebuffer);
+            if (D <= 0) {
+                D += D0;
             }
-            else
-            {
-                D += 2 * A + 2 * B;
+            else {
+                D += D1;
                 y += iy;
             }
         }
     }
-
+    
     drawLineHigh(x0, y0, x1, y1, color, framebuffer) {
         let A = x1 - x0;
         let B = y0 - y1;
-        let ix = 1;
+        let ix = 1; // x increment (+1 for positive slope, -1 for negative slop)
         if (A < 0) {
             ix = -1;
             A *= -1;
         }
         let D = 2 * A + B;
+        let D0 = 2 * A;
+        let D1 = 2 * A + 2 * B;
+    
         let x = x0;
-        let y = y0;
-        let px;
-        while (y <= y1)
-        {
-            px = this.pixelIndex(x, y, framebuffer);
-            this.setFramebufferColor(framebuffer, px, color);
-            y += 1;
-            if (D <= 0)
-            {
-                D += 2 * A;
+        for (let y = y0; y <= y1; y++) {
+            this.setFramebufferColor(color, x, y, framebuffer);
+            if (D <= 0) {
+                D += D0;
             }
-            else
-            {
-                D += 2 * A + 2 * B;
+            else {
+                D += D1;
                 x += ix;
             }
         }
     }
     
     drawTriangle(p0, p1, p2, color, framebuffer) {
-        // Sort points in ascending y order
+        // Deep copy, then sort points in ascending y order
+        p0 = {x: p0.x, y: p0.y};
+        p1 = {x: p1.x, y: p1.y};
+        p2 = {x: p2.x, y: p2.y};
         if (p1.y < p0.y) this.swapPoints(p0, p1);
         if (p2.y < p0.y) this.swapPoints(p0, p2);
         if (p2.y < p1.y) this.swapPoints(p1, p2);
@@ -292,3 +287,5 @@ class Renderer {
         }
     }
 };
+
+export { Renderer };
